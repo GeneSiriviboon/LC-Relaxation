@@ -89,10 +89,10 @@ class LC(object):
         gradient_mat = self.gradient(self.field)
         curl_term = curl(gradient_mat)
 
-        return np.mean(1 * self.K11/2 * div(gradient_mat)**2 \
-            + 1 * self.K22/2 * (dot(field, curl_term) + self.q0)**2 \
-            + 1 * self.K33/2 * norm_square(cross(field, curl_term)) \
-            - 1 * self.E0 * self.dE/2 * dot(self.E, field)**2)
+        return np.mean(self.K11/2 * div(gradient_mat)**2 \
+            + self.K22/2 * (dot(field, curl_term) + self.q0)**2 \
+            + self.K33/2 * norm_square(cross(field, curl_term)) \
+            - self.E0 * self.dE/2 * dot(self.E, field)**2)
 
     """
     Calculate the functional derivative
@@ -115,32 +115,17 @@ class LC(object):
         curl_term = curl(gradient_mat)
         dot_curl_term = dot(field, curl_term) 
         zeroth_twisted_term = mult(dot_curl_term + self.q0, curl_term)
-        # grad_dot_curl_term = self.gradient(mult_mat(dot_curl_term, np.einsum('kji,xyzk->xyzji', EPSILON, field)))
-        # grad_dot_curl_term = np.einsum('xyziij->xyzj',grad_dot_curl_term)
         grad_dot_curl_term = cross(field, self.gradient(dot_curl_term))
         twist_force = 2 * zeroth_twisted_term - grad_dot_curl_term
         """
-        Curve Calculation
+        Curved Term Calculation
         """
         isotropic_term = - self.laplacian(field) + 2  * self.q0 * curl(gradient_mat)
         cross_force  = isotropic_term - div_force - twist_force
-        # anti_sym_grad[x,y,z][j,i] = d f_j /dx_i - d f_i /dx_j
-        # anti_sym_grad = gradient_mat - np.transpose(gradient_mat, [0,1,2,4,3])
-        # anti_field = np.einsum('pi,xyzl->xyzlpi',DELTA, field)
-        # anti_field = anti_field - np.transpose(anti_field, [0,1,2,4,3,5])
-        # cross_curl = cross(field, curl_term)
-        # twist_zeroth_term = np.einsum('xyzi,xyzij->xyzj',cross_curl, anti_sym_grad)
-        # grad_curve_momentum_term = np.einsum('xyzi,xyzlpi->xyzpl', cross_curl, anti_field)
-        # grad_curve_momentum_term = self.gradient(grad_curve_momentum_term)
-        # grad_curve_momentum_term = np.einsum('xyziij->xyzj',grad_curve_momentum_term)
-
-        # momentum_term = np.einsum('xyziij->xyzj', 1 * self.K22 * grad_dot_curl_term + 1 *self.K33 * grad_curve_momentum_term)
-        # div_term_ =  - self.K11 * self.laplacian(field)
+        
         div_term = self.K11 * div_force
-
         twist_term = self.K22 * twist_force
-        # curve_term = self.K33 * (twist_zeroth_term - grad_curve_momentum_term)
-        cross_term  = self.K33 * cross_force
+        cross_term  = self.K33 * cross_force 
 
         """
         Electric Field Term
@@ -265,12 +250,12 @@ if __name__ == '__main__':
     """
     define parameter here
     """
-    pitch = 10e-6
+    pitch = 10e-6 # um
     size = [112, 112, 32]
-    q0 = 2*np.pi/ pitch * 0.0
+    q0 = 2*np.pi/ pitch * 0
     dr = pitch / 32
-    # K = [17.2e-12, 7.51e-12, 17.9e-12]
-    K = [17.9e-12, 17.9e-12, 17.9e-12]
+    K = [17.2e-12, 7.51e-12, 17.9e-12]
+    # K = [17.9e-12, 17.9e-12, 17.9e-12]
     gamma = 162
     field = random_field(size)
     E = np.zeros(field.shape)
@@ -278,7 +263,7 @@ if __name__ == '__main__':
 
 
     model = LC(field, gamma = gamma, E = E, dr = dr, K = K, q0 = q0, dt = dt)
-    model.animate_evolution(1000, save = './fig/noq0_')
+    model.animate_evolution(1000, save = './fig/100um_')
     sys.stdout.write('\a')
     sys.stdout.flush()
 
